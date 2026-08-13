@@ -10,13 +10,16 @@
     <meta name="robots" content="noindex" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <meta name="csp-nonce" content={assigns[:csp_nonce]} />
-    <.live_title suffix=" · Tymeslot">
+    <%!-- FORK NOTICE: public-facing product name. This layout serves only the
+          public booking pages; the dashboard uses root.html.heex and stays
+          attributed to Tymeslot, which is honest attribution rather than less. --%>
+    <.live_title suffix=" · Slate Scheduler">
       {assigns[:page_title] || dgettext("booking", "Schedule a meeting")}
     </.live_title>
 
     <%!-- Social share (Open Graph / Twitter) preview for booking links --%>
     <meta property="og:type" content="profile" />
-    <meta property="og:site_name" content="Tymeslot" />
+    <meta property="og:site_name" content="Slate Scheduler" />
     <meta
       property="og:title"
       content={assigns[:page_title] || dgettext("booking", "Schedule a meeting")}
@@ -32,7 +35,11 @@
     <meta name="twitter:description" content={booking_og_description(assigns)} />
     <meta name="twitter:image" content={booking_og_image(assigns)} />
 
-    <link rel="icon" type="image/svg+xml" href={~p"/images/brand/favicon.svg"} />
+    <%!-- FORK NOTICE: our own mark, as upstream TRADEMARK.md requires of a
+          distributed fork. Added as a NEW file rather than overwriting
+          images/brand/favicon.svg — a modified binary is invisible in git diff,
+          and leaving upstream's assets intact keeps rebases clean. --%>
+    <link rel="icon" type="image/svg+xml" href={~p"/images/slate/favicon.svg"} />
 
     <%!-- Theme-specific CSS --%>
     {render_theme_css(assigns[:theme_id] || "1")}

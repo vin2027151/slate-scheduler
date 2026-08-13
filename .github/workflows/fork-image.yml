@@ -1,0 +1,152 @@
+# Slate Scheduler — build and publish the fork image.
+#
+# A NEW file, deliberately. Upstream's docker-publish.yml is left untouched so
+# it never conflicts on rebase; disable it in the Actions UI instead (a repo
+# setting, not a file edit, so it survives every rebase).
+#
+# Triggers on `deploy/*` tags, NOT `v*`. Upstream's workflow listens on `v*`,
+# its `github.server_url` guard passes on a fork, and it would fail on missing
+# Docker Hub secrets — or, worse, try to push to luka1thb/tymeslot.
+name: Build fork image
+
+on:
+  push:
+    tags: ["deploy/*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag, e.g. 1.8.1-rp.1"
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ${{ github.repository_owner }}/slate-scheduler
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # deploy/1.8.1-rp.1 -> 1.8.1-rp.1. This MUST match the pin in
+      # tymeslot-deploy/docker-compose.yml exactly; a mismatch surfaces as
+      # "manifest unknown" from `docker compose pull` mid-cutover, with the
+      # site already down.
+      - name: Resolve image tag
+        id: meta
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME#deploy/}"
+          fi
+          case "$TAG" in
+            v*) echo "::error::Tag '$TAG' still starts with 'v'. Expected deploy/<version>-rp.<n>."; exit 1 ;;
+            "") echo "::error::Empty tag."; exit 1 ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Building ${REGISTRY}/${IMAGE}:$TAG"
+
+      # Rollback targets must be immutable. If this tag already exists, someone
+      # is about to overwrite the image a previous deploy can roll back to.
+      - name: Refuse to overwrite an existing tag
+        run: |
+          set -euo pipefail
+          TOK=$(curl -sS "https://${REGISTRY}/token?scope=repository:${IMAGE}:pull&service=${REGISTRY}" \
+                | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+          CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
+                   -H "Authorization: Bearer ${TOK}" \
+                   -H 'Accept: application/vnd.oci.image.index.v1+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json' \
+                   "https://${REGISTRY}/v2/${IMAGE}/manifests/${{ steps.meta.outputs.tag }}" || true)
+          if [ "$CODE" = "200" ]; then
+            echo "::error::${IMAGE}:${{ steps.meta.outputs.tag }} already exists. Bump the rp.<n> suffix."
+            exit 1
+          fi
+          echo "Tag is free (HTTP $CODE)."
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # amd64 only: the server is a Hetzner CPX11 (x86_64). Building arm64 here
+      # would pay CI minutes for an artifact only the developer's Mac uses, and
+      # that machine builds it natively in less time.
+      #
+      # DEFAULT target, not release-slim: the existing tymeslot_pg volume needs
+      # the image with the bundled PostgreSQL server.
+      #
+      # Registry cache, not type=gha: the GHA cache is scoped by ref, and tag
+      # refs cannot read each other's scopes, so every tag build would be cold.
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.docker
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE }}:sha-${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE }}:buildcache,mode=max
+          provenance: false
+
+      # The highest-value step in this file.
+      #
+      # The failure it guards against is the one that only appears in
+      # production: the skin is referenced from config, the page renders, and
+      # the stylesheet 404s — so the widget silently serves stock Rhythm on a
+      # cream page. Same signature as the frame-ancestors incident: correct
+      # markup, missing payload.
+      - name: Verify the shipped image
+        env:
+          IMG: ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "--- PostgreSQL major must be 17 (matches the live tymeslot_pg volume) ---"
+          PG=$(docker run --rm --entrypoint sh "$IMG" -c 'ls /usr/lib/postgresql/')
+          echo "  found: $PG"
+          [ "$PG" = "17" ] || { echo "::error::Expected PostgreSQL 17, got '$PG'."; exit 1; }
+
+          echo "--- brand skin, fonts and mark must be present in the release ---"
+          docker run --rm --entrypoint sh "$IMG" -c '
+            set -e
+            R=$(echo /app/lib/tymeslot-*/priv/static)
+            test -f "$R/css/slate-skin.css"                 || { echo "MISSING slate-skin.css"; exit 1; }
+            test -f "$R/fonts/instrument-sans.woff2"           || { echo "MISSING instrument-sans.woff2"; exit 1; }
+            test -f "$R/fonts/newsreader.woff2"                || { echo "MISSING newsreader.woff2"; exit 1; }
+            test -f "$R/fonts/OFL.txt"                         || { echo "MISSING OFL.txt (OFL-1.1 requires it)"; exit 1; }
+            test -f "$R/images/slate/favicon.svg"            || { echo "MISSING slate favicon"; exit 1; }
+            grep -q "root:root" "$R/css/slate-skin.css"      || { echo "skin lost its :root:root specificity fix"; exit 1; }
+            echo "  all present"
+          '
+
+          echo "--- the theme stylesheets must still be digested (assets.deploy ran) ---"
+          docker run --rm --entrypoint sh "$IMG" -c '
+            R=$(echo /app/lib/tymeslot-*/priv/static/assets)
+            ls "$R" | grep -Eq "scheduling-theme-rhythm-[0-9a-f]{32}\.css" \
+              || { echo "no digested rhythm CSS - did assets.deploy run?"; exit 1; }
+            echo "  digested assets present"
+          '
+
+      - name: Summary
+        run: |
+          {
+            echo "### Image published"
+            echo ""
+            echo '```'
+            echo "${REGISTRY}/${IMAGE}:${{ steps.meta.outputs.tag }}"
+            echo '```'
+            echo ""
+            echo "Pin this in \`tymeslot-deploy/docker-compose.yml\`, then deploy with"
+            echo "\`./deploy.sh --target <ip> --config-only\`."
+          } >> "$GITHUB_STEP_SUMMARY"

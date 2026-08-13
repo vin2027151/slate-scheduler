@@ -131,9 +131,34 @@ CMD ["/app/start-docker.sh"]
 # batteries-included image every existing self-hoster runs.
 FROM release-slim AS release
 
+# FORK NOTICE: pin the PostgreSQL major version.
+#
+# Upstream installs the unversioned `postgresql` metapackage, resolved against
+# whatever `debian:trixie-slim` points at on the day of the build, and
+# start-docker.sh then starts the server through a glob
+# (/usr/lib/postgresql/*/bin/pg_ctl). Within trixie that is stable at 17, but
+# the day upstream moves the runtime base to the next Debian release the
+# metapackage resolves to 18, and an existing tymeslot_pg volume initialised by
+# 17 makes the server refuse to start:
+#
+#   FATAL: database files are incompatible with server
+#
+# start-docker.sh exits 1, `restart: unless-stopped` restarts it, and the result
+# is a crash loop with the site 502ing and nothing alerting — discovered at 2am,
+# with an error the glob makes obscure.
+#
+# Pinning inverts that. A base image that no longer carries postgresql-17 fails
+# the BUILD with "Unable to locate package", which is a problem you find in CI
+# instead of in production. Verified on the live box: PG_VERSION on the volume
+# is 17, the running image ships 17, and Debian trixie carries postgresql-17.
+#
+# Deliberately NOT pinning the base image by digest: apt still floats the minor
+# version, so it buys nothing here, and it would freeze the runtime out of
+# Debian security updates that an upstream rebuild otherwise picks up for free.
+ARG PG_MAJOR=17
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql \
-    postgresql-contrib \
+    postgresql-${PG_MAJOR} \
+    postgresql-contrib-${PG_MAJOR} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

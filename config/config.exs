@@ -68,10 +68,26 @@ config :tymeslot,
   extra_static_sources: [],
 
   # Theme extensions - empty by default (external layers can add overlays/branding)
-  theme_extensions: [],
+  # FORK NOTICE: renders the AGPL section 13 source offer on the public
+  # booking page, inside the iframe, where our network users actually are.
+  # Rhythm's wrapper.ex already calls render_theme_extensions/1, so this needs
+  # no template edit. Note filter_valid_extensions/1 silently drops a module
+  # that fails Code.ensure_loaded?/function_exported? with only a
+  # Logger.warning — verify ".source-offer" is really in the served HTML.
+  theme_extensions: [{TymeslotWeb.Extensions.SourceOffer, :render}],
 
   # Additional CSS files for scheduling pages - empty by default (external layers can inject CSS)
-  scheduling_additional_css: [],
+  # FORK NOTICE: this upstream seam is the whole of the Stage 1 skin. The
+  # <link> is emitted by scheduling_root.html.heex immediately AFTER
+  # render_theme_css/1, so our sheet wins on source order where specificity
+  # allows, and carries !important where it does not.
+  #
+  # The path is rendered verbatim rather than through ~p, so it is NOT
+  # digest-resolved and is served with one hour of freshness plus an ETag.
+  # BUMP ?v= ON EVERY EDIT TO THE SKIN or returning visitors keep the old file
+  # for up to an hour. (?v= is also the only cache bypass that works on these
+  # Cloudflare zones.)
+  scheduling_additional_css: ["/css/slate-skin.css?v=1"],
 
   # Analytics configuration - nil by default (no analytics)
   # Can be configured as a list of provider configs

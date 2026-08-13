@@ -1,0 +1,60 @@
+Slate Scheduler
+==================
+
+Slate Scheduler is a MODIFIED version of Tymeslot, derived from upstream
+release v1.8.1 (commit 591afe69286894541bf55bd46dfb62549413735e).
+
+  Upstream : https://github.com/Tymeslot/tymeslot
+  Licence  : GNU Affero General Public License v3.0 or later — UNCHANGED.
+             The full, unmodified licence text is in LICENSE.
+  Upstream copyright : Copyright (C) 2025 Luka Karsten Breitig,
+                       Diletta Luna OÜ — see COPYRIGHT.
+
+Modifications
+-------------
+Copyright (C) 2026 the operator
+
+This is a modified version of the Program within the meaning of the AGPL. The
+modified files carry a notice to that effect, and the complete list — with the
+reason for each change — is maintained in FORK.md. Everything not listed there
+is upstream's work, unaltered.
+
+Corresponding Source
+--------------------
+The public instance at https://the booking host runs this program. Under
+AGPL section 13, everyone who interacts with it over a network is offered the
+Corresponding Source of the running modified version: it is this repository, at
+the tag named by the deployed image (deploy/<version>-rp.<n>).
+
+The running instance carries a visible "Source" link on the booking page,
+rendered by TymeslotWeb.Extensions.SourceOffer.
+
+Secrets are not Corresponding Source and are not published: SECRET_KEY_BASE,
+DATA_ENCRYPTION_KEY, POSTGRES_PASSWORD, SMTP and OAuth credentials live only in
+an untracked .env. See .env.example for the shape.
+
+Trademarks
+----------
+"Tymeslot" and the Tymeslot logo are trademarks of Diletta Luna OÜ (Tallinn,
+Estonia) and are NOT licensed under the AGPL. Upstream's TRADEMARK.md requires
+that a distributed modified version carry its own name and its own logo, and
+permits stating that it is derived from Tymeslot. Accordingly:
+
+  * this fork is named "Slate Scheduler", not Tymeslot;
+  * the public booking pages carry the operator's own mark;
+  * this notice states the derivation, which TRADEMARK.md expressly allows.
+
+Slate Scheduler is neither affiliated with, nor endorsed or sponsored by,
+Diletta Luna OÜ or the Tymeslot project.
+
+Note on internal naming: the OTP application, Elixir module namespace, release
+name, database role and session cookie remain `tymeslot`. These are internal
+identifiers, not the product name or mark presented to users, and renaming them
+would break restore compatibility for every existing database backup. The
+product a user encounters is named and marked as Slate Scheduler throughout.
+
+Bundled fonts
+-------------
+priv/static/fonts/ contains Instrument Sans and Newsreader, both licensed under
+the SIL Open Font License 1.1. The licence text and copyright notices are
+reproduced in priv/static/fonts/OFL.txt, as that licence requires.

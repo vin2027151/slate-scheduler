@@ -51,7 +51,16 @@ priv/static/**/*-????????????????????????????????.*
 # Built embed script from assets.deploy (source is in assets/js/embed.js)
 priv/static/embed.js
 # Legacy theme CSS superseded by tailwind quill/rhythm builds in assets/
-priv/static/css/
+#
+# FORK NOTICE: `priv/static/css/*` rather than `priv/static/css/`, so that a
+# single tracked file can be re-included below. Git cannot re-include a file
+# whose parent DIRECTORY is excluded, so the trailing-slash form would make the
+# negation silently do nothing — the skin would never be committed, CI's
+# checkout would not have it, and the image would ship without the brand.
+priv/static/css/*
+# The hand-authored brand skin is source, not build output. It cannot live in
+# priv/static/assets/ because Dockerfile.docker wipes that directory after COPY.
+!priv/static/css/slate-skin.css
 priv/cert/
 .elixir_ls/
 .dialyzer/

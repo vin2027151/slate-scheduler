@@ -1,0 +1,420 @@
+/* ============================================================================
+ * Slate Scheduler — brand skin over the Rhythm booking theme
+ * ============================================================================
+ *
+ * WHERE THIS COMES FROM
+ * Ported from the design spec, which was written as a
+ * spec for exactly this file, then corrected against the compiled bundle and
+ * the live page. Stock Tymeslot has no custom-CSS field — the :root block on
+ * the booking page is GENERATED from the dashboard palette, not authored — and
+ * all eight built-in colour schemes are dark-background, so a cream booking
+ * page is unreachable without a fork. This is the fork's answer.
+ *
+ * HOW IT IS LOADED
+ *     config :tymeslot, scheduling_additional_css: ["/css/slate-skin.css?v=1"]
+ * which scheduling_root.html.heex renders as a <link> immediately AFTER
+ * render_theme_css/1. That seam is upstream's own ("external layers can inject
+ * CSS"), so no template edit is needed.
+ *
+ * It lives in priv/static/css/ and NOT priv/static/assets/, because
+ * Dockerfile.docker runs `rm -rf priv/static/assets/` after COPY to keep the
+ * build hermetic — a stylesheet placed there works locally and vanishes in the
+ * image. `css` is already in TymeslotWeb.static_paths/0.
+ *
+ * The href is rendered verbatim (not through ~p), so it is not digest-resolved
+ * and gets one hour of freshness plus ETag revalidation. BUMP ?v= ON EVERY EDIT.
+ *
+ * ── TWO THINGS THAT DECIDE WHETHER THIS FILE WORKS AT ALL ──────────────────
+ *
+ * 1. TOKENS USE `:root:root`, NOT `:root`.
+ *    wrapper.ex emits the generated palette as <style>:root{...}</style> inside
+ *    <body> — i.e. AFTER this file in <head>. Two bare `:root` blocks at equal
+ *    specificity means the LATER one wins, so a plain `:root` here would be
+ *    silently overridden for the eight tokens the dashboard sets.
+ *    `:root:root` is (0,2,0) and beats it regardless of source order.
+ *
+ *    And the generated block cannot be avoided: helpers.ex substitutes
+ *    Defaults.get_fallback_customization when the customization is nil, so it
+ *    is never empty; and custom_palette_seed cannot help either, because
+ *    PaletteDerivation hardcodes the lightness of every non-brand token
+ *    (background L=8%, surface L=18%) regardless of the seed. There is no
+ *    configuration path to a light page. Specificity is the only lever.
+ *
+ * 2. OVERRIDES USE `!important` — measured, not lazy.
+ *    Rhythm targets these elements with `html.rhythm-theme[data-embedded] .foo`
+ *    (0,3,1), rising to (0,5,1); `.input` has no bare selector at all, only
+ *    compound `.rhythm-theme-wrapper …` forms. A bare `.foo` (0,1,0) loses, and
+ *    so would the spec's original `:root .foo` trick (0,2,0). A
+ *    specificity-matching prefix would work today and break the next time
+ *    upstream adds a compound selector — a poor bet against ~90 commits/week.
+ *    !important is stable under that churn AND is the only thing that beats the
+ *    inline style="" attributes on .video-background-container and
+ *    error_component.ex. @layer is not an option: unlayered beats layered.
+ *
+ * CONTRAST (measured on --paper #F3F2E9)
+ *   ink 14.3:1 · ink-dim 6.7:1 · gold 5.2:1 · white on vir 7.6:1 — all AA.
+ *   Note --theme-error-light was changed from the spec's #B87A5C (3.3:1, FAILS)
+ *   to #7A4126 (6.6:1); it is body text on the calendar-error block.
+ * ========================================================================= */
+
+
+/* ── Fonts ───────────────────────────────────────────────────────────────────
+ * Two variable fonts, self-hosted. A third-party font request from the booking
+ * origin would falsify the site's published claim that every asset is
+ * first-party, so these must never become a CDN link.
+ *
+ * One file per family covers the whole weight range — verified via fvar:
+ * Instrument Sans wght 400-700, Newsreader wght 200-800 + opsz 6-72. The
+ * consuming site ships four byte-identical copies of Instrument Sans under
+ * per-weight filenames; that mistake is not repeated here. 164KB total.
+ *
+ * This is the thing the old approach could never do. @font-face is a top-level
+ * at-rule and cannot be nested inside a declaration block, so pasting into the
+ * generated `:root{}` could never load a font — which is why Newsreader and
+ * Instrument Sans silently resolved to Georgia and Helvetica. A standalone
+ * linked stylesheet has no such limit. Georgia/Helvetica stay in the stacks as
+ * genuine fallbacks now, not as the expected outcome. */
+
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('/fonts/instrument-sans.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/newsreader.woff2') format('woff2');
+}
+
+
+/* ── Part 1 · Tokens ─────────────────────────────────────────────────────────
+ * Rhythm reads these through var(), so setting them reaches every rule that was
+ * written properly. Part 2 handles the rules that were not.
+ * `:root:root` is deliberate — see note 1 in the header. */
+
+:root:root {
+  --theme-primary: #0E5F4C;          /* --vir      selected day/slot, primary button */
+  --theme-primary-hover: #0A4638;    /* --vir-dark */
+  --theme-accent: #7A6128;           /* --gold     avatar check, ticket badge */
+  --theme-accent-dark: #5E4B1F;
+
+  --theme-background: #F3F2E9;       /* --paper    matches .calwrap exactly */
+  --theme-surface: #FBFAF3;          /* --card     was translucent dark */
+  --theme-text: #16241E;             /* --ink */
+  --theme-text-secondary: #47584F;   /* --ink-dim */
+
+  /* Semantics moved off Tailwind defaults onto the site's own palette. */
+  --theme-warning: #96502F;          /* --caveat */
+  --theme-danger: #96502F;
+  --theme-danger-dark: #7A4126;
+  --theme-error: #96502F;
+  --theme-error-light: #7A4126;      /* NOT the spec's #B87A5C — that is 3.3:1 on
+                                        paper and is body text on .calendar-error,
+                                        the block shown when availability fails. */
+  --theme-error-bg: rgba(150, 80, 47, .08);
+  --theme-error-border: rgba(150, 80, 47, .40);
+  --theme-info: #0E5F4C;
+  --theme-info-dark: #0A4638;
+
+  /* Surfaces. Rhythm's defaults are white-alpha for glass over a dark page; on
+   * cream they read as nothing, so these invert to ink-alpha. */
+  --surface-subtle: rgba(22, 36, 30, .025);
+  --surface-light: rgba(22, 36, 30, .045);
+  --surface-medium: rgba(22, 36, 30, .065);
+  --surface-strong: rgba(22, 36, 30, .09);
+  --surface-intense: rgba(22, 36, 30, .13);
+
+  /* Borders. Same inversion; --border-strong takes the site's own rule colour. */
+  --border-subtle: rgba(22, 36, 30, .10);
+  --border-light: rgba(22, 36, 30, .14);
+  --border-medium: rgba(22, 36, 30, .20);
+  --border-strong: #B7B49E;          /* --rule-strong, matches the .calwrap frame */
+
+  /* Scrollbars. Same glass-on-dark reason as --surface-*, and missed by the
+   * spec: white-alpha thumbs are invisible on cream, so .scroll-y on the
+   * content area appears to have no scrollbar at all. */
+  --scrollbar-track: rgba(22, 36, 30, .05);
+  --scrollbar-thumb: rgba(22, 36, 30, .22);
+  --scrollbar-thumb-hover: rgba(22, 36, 30, .34);
+
+  /* Neutral elevation. Rhythm tunes these for a near-black page (black at
+   * 15-25%), where they are barely perceptible; over cream they read as heavy
+   * grey smudges. Slate is flat, so these go nearly to nothing. */
+  --shadow-sm: 0 1px 2px rgba(22, 36, 30, .06);
+  --shadow-md: 0 2px 6px rgba(22, 36, 30, .08);
+  --shadow-lg: 0 6px 18px rgba(22, 36, 30, .10);
+  --box-shadow: 0 1px 0 rgba(22, 36, 30, .06);   /* default is a 50%-alpha BLACK drop */
+
+  /* Brand glows on the action buttons. These are literal cyan/emerald/red —
+   * Rhythm's DEFAULT palette, not wired to --theme-primary — so changing the
+   * primary token leaves a cyan halo under a green button. */
+  --shadow-primary-sm: 0 2px 6px rgba(14, 95, 76, .16);
+  --shadow-primary-md: 0 3px 10px rgba(14, 95, 76, .20);
+  --shadow-success-sm: 0 2px 6px rgba(122, 97, 40, .16);
+  --shadow-success-md: 0 3px 10px rgba(122, 97, 40, .20);
+  --shadow-success-lg: 0 4px 14px rgba(122, 97, 40, .16);
+  --shadow-danger-sm: 0 2px 6px rgba(150, 80, 47, .16);
+  --shadow-danger-md: 0 3px 10px rgba(150, 80, 47, .20);
+
+  /* Tailwind brand tokens. security_fields.ex paints the reCAPTCHA notice and
+   * the error page's icon badge from these directly, bypassing --theme-*. They
+   * are emitted into @layer theme, so this unlayered block beats them. */
+  --color-turquoise-600: #0E5F4C;
+  --color-turquoise-700: #0A4638;
+  --color-tymeslot-500: #47584F;
+
+  /* Quill's token names. Payment-return pages load QUILL's stylesheet, not
+   * Rhythm's — router.ex's :payment_return live_session omits ThemeHook and
+   * theme_plug.ex does not match /themes/<name>/… — so the root layout falls
+   * back to theme "1". Setting these keeps those pages on-brand. */
+  --theme-background-color: #F3F2E9;
+  --surface-very-light: rgba(22, 36, 30, .045);
+  --text-opacity-high: #16241E;
+  --text-opacity-medium-high: #47584F;
+
+  /* Now a real font stack rather than a silent fallback to Helvetica. */
+  --theme-font-family: 'Instrument Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* Slate is square-edged. --radius-full is left alone so the guest chips
+   * keep their pill shape (the organizer avatar is a literal 50% in
+   * overview.css and is unaffected either way).
+   *
+   * --radius-3xl was NOT in the spec: Rhythm reads it twice and it defaults to
+   * 2rem, so without this one corner stayed round while everything else went
+   * square. Found by diffing every var() Rhythm reads against the spec's set. */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+
+  /* Flatten the glass card. The hue is hardcoded, so this only does half the
+   * job — see .scheduling-box in Part 2. NOTE: payment-pages.css reads the same
+   * token as a raw alpha, `rgba(0,0,0,var(--box-opacity))`, so 1 would paint
+   * that card solid BLACK. .payment-page-card is set explicitly in Part 2. */
+  --box-opacity: 1;
+  --box-blur: 0px;
+
+  /* Deliberately NOT set — verified never read by any var() in the compiled
+   * bundle: --theme-secondary, --theme-text-muted, --theme-line-height-loose,
+   * --time-slot-min-width, --time-slot-min-height, --icon-2xl, --shadow-xl.
+   * Setting them looks like it works and does nothing.
+   *
+   * Left at defaults on purpose: --theme-font-size-*, --theme-line-height-*,
+   * --border-width-*, --radius-full, --theme-background-image. Sizes and
+   * metrics, not colours; Rhythm's fluid clamp() scale is good. */
+}
+
+
+/* ── Part 2 · Values the tokens cannot reach ─────────────────────────────────
+ * Every rule counters a colour Rhythm hardcodes outside the token system, or
+ * an inline style attribute. Each cites what it is countering. */
+
+/* base.css paints rgba(0,0,0,.3) over the whole background (.4 under 480px).
+ * This element sits in normal flow ABOVE the fixed background container, so
+ * without this the scrim greys out the entire page. */
+.video-background-theme { background: transparent !important; }
+
+/* The live page serves this element with an INLINE background-color
+ * (`style="background-color: #14886D;"`), written from the stored theme
+ * customization. Inline beats every author selector, so !important is
+ * mandatory — this is not belt and braces. The [style] arm also ties
+ * video.css's own attribute selector for the background-image case. */
+.video-background-container,
+.video-background-container[style] {
+  background-color: #F3F2E9 !important;
+  background-image: none !important;
+}
+.video-background-video { display: none !important; }
+
+/* base.css — linear-gradient(135deg, rgba(20,20,35,var(--box-opacity)),
+ * rgba(15,15,25,.6)). Only the first stop's ALPHA is tokenised; both hues are
+ * literal, so --box-opacity alone can never make this light. */
+.scheduling-box {
+  background: #FBFAF3 !important;
+  border: 1px solid #B7B49E !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* overview.css / schedule-header.css ring the avatar in rgba(255,255,255,.8),
+ * invisible on cream. */
+.avatar-image,
+.avatar-image-small { border-color: #B7B49E !important; }
+
+/* custom-questions.css — the focus glow is a literal cyan rgba(6,182,212,.25),
+ * matching Rhythm's DEFAULT primary but not wired to --theme-primary. */
+.input:focus,
+.custom-question-yes-no-tile:focus-within,
+.custom-question-option-card:focus-within {
+  box-shadow: 0 0 0 3px rgba(14, 95, 76, .22) !important;
+}
+.input:hover { border-color: #B7B49E !important; }
+
+/* custom-questions.css inverts the native date/time picker icon
+ * (`filter: invert() opacity(.7)`) "so it stays visible on the translucent dark
+ * surface". On cream the inversion makes it invisible. */
+.input::-webkit-calendar-picker-indicator {
+  filter: none !important;
+  opacity: .65 !important;
+}
+
+/* schedule-header.css — dropdown panel is a hardcoded near-black gradient with
+ * a 20px backdrop blur and a 32px black-25% shadow. */
+.timezone-dropdown {
+  background: #FBFAF3 !important;
+  border: 1px solid #B7B49E !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 4px 16px rgba(22, 36, 30, .12) !important;
+}
+
+/* confirmation.css — gradients ending in literal #34d399 / --theme-accent.
+ * The spec covered three variants and missed --success, which is the badge on
+ * the cancel page after "Keep Meeting". */
+.success-badge-inner,
+.success-badge-inner--info { background: #0E5F4C !important; box-shadow: none !important; }
+.success-badge-inner--success { background: #7A6128 !important; box-shadow: none !important; }
+.success-badge-inner--danger { background: #96502F !important; box-shadow: none !important; }
+
+/* cancel.ex renders class="action-button-primary action-button-secondary", and
+ * the compound rule only overrides `background` — leaving the primary rule's
+ * `color:#fff`. White on a pale secondary fill is an invisible "Keep Meeting"
+ * button on the cancellation page. */
+.action-button-primary.action-button-secondary {
+  background: #EAE9DC !important;
+  color: #16241E !important;
+  border: 1px solid #B7B49E !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.action-button-primary.action-button-secondary:hover {
+  background: #E0DFCF !important;
+  border-color: #B7B49E !important;
+}
+
+/* confirmation.css / calendar.css — literals just off the surface scale. */
+.ticket-footer { background: rgba(22, 36, 30, .03) !important; }
+.calendar-day--loading { background: rgba(22, 36, 30, .05) !important; }
+
+/* components.css — rgba(0,0,0,.4) chip. */
+.calendar-error-inline { background: #EAE9DC !important; color: #16241E !important; }
+
+/* shared/layout.css — the awaiting-payment step is reachable on the public
+ * booking URL for any paid event and is styled entirely with hardcoded
+ * dark-page colours; not one token reaches it. */
+.awaiting-payment-card {
+  background: #FBFAF3 !important;
+  border: 1px solid #B7B49E !important;
+  border-radius: 0 !important;
+  color: #16241E !important;
+}
+.awaiting-payment-icon { color: #7A6128 !important; }
+.awaiting-payment-heading { color: #16241E !important; }
+.awaiting-payment-message,
+.awaiting-payment-fallback { color: #47584F !important; }
+
+/* payment-pages.css reads --box-opacity as a raw alpha over BLACK, so the
+ * token that flattens .scheduling-box would paint this card solid black. Set
+ * it explicitly so it is right under either stylesheet. */
+.payment-page-card {
+  background: #FBFAF3 !important;
+  border: 1px solid #B7B49E !important;
+}
+
+/* shared/components/error_component.ex — the "calendar not connected" page,
+ * reachable in production, sets style="color: white" INLINE on its heading and
+ * a white-alpha inline colour on its body copy. Only !important beats those. */
+.glass-morphism-card { background: #FBFAF3 !important; border: 1px solid #B7B49E !important; }
+.glass-morphism-card h1[style],
+.glass-morphism-card h1 { color: #16241E !important; }
+.glass-morphism-card p[style],
+.glass-morphism-card p { color: #47584F !important; }
+
+/* core_components/flash.ex styles the toast in Tailwind brand utilities, half
+ * of which do not compile into the scheduling bundle — so an unstyled white
+ * box with invisible text. Scoped to the scheduling flash group only. */
+#scheduling-flash-group [role="alert"] {
+  background: #FBFAF3 !important;
+  border-color: #B7B49E !important;
+  color: #16241E !important;
+  box-shadow: 0 4px 16px rgba(22, 36, 30, .12) !important;
+}
+
+/* layouts.ex noscript_warning is 16 inline declarations including a #be123c
+ * crimson bar. Attribute-scoped so it only touches that element. */
+noscript > div[style] {
+  background: #96502F !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid #7A4126 !important;
+}
+noscript > div[style] svg[style],
+noscript > div[style] strong[style] { color: #F3F2E9 !important; }
+
+/* core_components/forms.ex:300 renders validation errors with Tailwind's
+ * font-bold; Rhythm overrides only colour and size, so the weight shouts. The
+ * form-field-wrapper form also covers custom questions, which the spec's
+ * .booking-form-scoped selector missed. */
+.form-field-wrapper > div.mt-2,
+.form-field-wrapper > div[role="alert"] {
+  font-weight: 500 !important;
+  color: #96502F !important;
+}
+.form-field-wrapper .label .text-red-500 { color: #96502F !important; }
+
+/* language-switcher.css — a family of hardcoded blacks and #ffffff. Only one
+ * locale is configured, so this is hidden rather than restyled. Delete the
+ * first rule and keep the rest if locales are ever added. */
+.language-switcher-container { display: none !important; }
+.language-switcher-button-rhythm {
+  background: #FBFAF3 !important; color: #16241E !important; border: 1px solid #B7B49E !important;
+}
+.language-switcher-button-rhythm:hover { background: #EAE9DC !important; }
+.language-dropdown-rhythm { background: #FBFAF3 !important; border: 1px solid #B7B49E !important; }
+.language-dropdown-item-rhythm:hover,
+.language-dropdown-item-rhythm.active { background: #EAE9DC !important; color: #16241E !important; }
+
+/* Editorial voice: the site sets display type in Newsreader, not the UI sans.
+ * This now actually resolves, because the @font-face above is reachable. */
+.slide-title,
+.confirmation-headline,
+.calendar-month-year {
+  font-family: 'Newsreader', Georgia, 'Iowan Old Style', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -.01em !important;
+}
+
+/* Rhythm ships a print stylesheet that makes the card white with a #ccc border.
+ * The rules above would otherwise win inside @media print too and print cream. */
+@media print {
+  .scheduling-box { background: #fff !important; border-color: #ccc !important; }
+}
+
+
+/* ── AGPL §13 source offer ───────────────────────────────────────────────────
+ * Rendered by TymeslotWeb.Extensions.SourceOffer via the :theme_extensions
+ * seam. AGPL requires this be offered "prominently" to users interacting over
+ * a network, so it stays visible and legible: never display:none, never
+ * zero-opacity, never behind a hover. --ink-dim on --paper is 6.7:1, AA. */
+.source-offer {
+  display: inline-block;
+  margin: 12px 0 4px;
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #47584F;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 1;
+}
+.source-offer:hover,
+.source-offer:focus { color: #0E5F4C; }

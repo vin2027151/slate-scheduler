@@ -217,6 +217,16 @@
  * Every rule counters a colour Rhythm hardcodes outside the token system, or
  * an inline style attribute. Each cites what it is countering. */
 
+/* The page itself has NO background: html, body, main and .rhythm-theme-wrapper
+ * are all transparent, and only .video-background-container carries a colour —
+ * sized to content, not to the viewport. Inside the iframe that gap shows
+ * whatever is behind, and contact.js pins the frame ~200px taller than the
+ * content, so the gap is always there. Measured in the harness: main is 503px
+ * against a 1000px frame. Paint the root explicitly and it cannot happen.
+ * Also covers Quill, which the payment-return pages fall back to. */
+html.scheduling-app,
+html.scheduling-app body { background-color: #F3F2E9 !important; }
+
 /* base.css paints rgba(0,0,0,.3) over the whole background (.4 under 480px).
  * This element sits in normal flow ABOVE the fixed background container, so
  * without this the scrim greys out the entire page. */
@@ -398,6 +408,61 @@ noscript > div[style] strong[style] { color: #F3F2E9 !important; }
   .scheduling-box { background: #fff !important; border-color: #ccc !important; }
 }
 
+
+/* ── Call to action ──────────────────────────────────────────────────────────
+ * Rhythm styles .next-button and .prev-button with the SAME rule —
+ * `background: var(--surface-light)` plus a thin border — so the primary action
+ * is visually identical to "Back". On a booking page that is the one control
+ * that must not be quiet.
+ *
+ * Split them: Next/Submit become solid --vir with white text (7.6:1), Back
+ * stays a quiet outline. Selector is .next-button alone, never the shared
+ * `.prev-button,.next-button` pair, so Back is untouched. */
+.next-button,
+.submit-button,
+.action-button-primary:not(.action-button-secondary) {
+  background: #0E5F4C !important;
+  border: 1px solid #0E5F4C !important;
+  color: #FBFAF3 !important;
+  font-weight: 600 !important;
+  letter-spacing: .01em !important;
+}
+.next-button:hover:not(:disabled):not(.disabled),
+.submit-button:hover:not(:disabled):not(.disabled),
+.action-button-primary:not(.action-button-secondary):hover:not(:disabled) {
+  background: #0A4638 !important;
+  border-color: #0A4638 !important;
+  color: #FBFAF3 !important;
+}
+/* Rhythm's disabled state is only `opacity:.5`, which over solid green reads as
+ * a muddy half-tone. Give it a real resting state instead: legible, obviously
+ * inert, and clearly the same control. */
+.next-button:disabled,
+.next-button.disabled,
+.submit-button:disabled,
+.submit-button.disabled {
+  background: rgba(22, 36, 30, .05) !important;
+  border: 1px solid rgba(22, 36, 30, .18) !important;
+  color: rgba(22, 36, 30, .45) !important;
+  opacity: 1 !important;
+}
+/* Keep the quiet control quiet, and make the pair read as a hierarchy. */
+.prev-button {
+  background: transparent !important;
+  border: 1px solid #B7B49E !important;
+  color: #47584F !important;
+  font-weight: 500 !important;
+}
+.prev-button:hover:not(:disabled) {
+  background: rgba(22, 36, 30, .04) !important;
+  border-color: #B7B49E !important;
+}
+
+/* The meeting-type card's duration row leads with a flask/test-tube glyph —
+ * upstream's generic "hero icon" for a duration. It reads as laboratory, not
+ * as a 30-minute consultation, and the text beside it already says "30
+ * minutes". Drop the icon and let the text carry it. */
+.duration-icon { display: none !important; }
 
 /* ── AGPL §13 source offer ───────────────────────────────────────────────────
  * Rendered by TymeslotWeb.Extensions.SourceOffer via the :theme_extensions

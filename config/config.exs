@@ -87,7 +87,7 @@ config :tymeslot,
   # BUMP ?v= ON EVERY EDIT TO THE SKIN or returning visitors keep the old file
   # for up to an hour. (?v= is also the only cache bypass that works on these
   # Cloudflare zones.)
-  scheduling_additional_css: ["/css/slate-skin.css?v=1"],
+  scheduling_additional_css: ["/css/slate-skin.css?v=2"],
 
   # Analytics configuration - nil by default (no analytics)
   # Can be configured as a list of provider configs

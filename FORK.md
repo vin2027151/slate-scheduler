@@ -53,7 +53,7 @@ Seven files. Re-apply every one on a rebase.
 | `lib/tymeslot_web/components/layouts/scheduling_root.html.heex` | title suffix, `og:site_name`, favicon → `/images/slate/favicon.svg` | cosmetic, but reverts the product name to Tymeslot — a **trademark** issue, not just a branding one |
 | `lib/tymeslot_web/themes/core/mount_helpers.ex` | `restore_param_customizations/2` — stops `assign_theme_customization/3` clobbering the hex-validated `?primary-color=` that `Context.from_params/2` just parsed | **silent** — `data-primary-color` goes back to doing nothing at all, while embed.js still forwards it and the dashboard still offers it |
 | `lib/tymeslot_web/components/core_components/brand.ex` | logo `src` → `/images/slate/…`, alt text, intrinsic dimensions matched to the Slate artwork | **trademark** — the modified version starts serving upstream's logo again |
-| `lib/tymeslot_web/controllers/error_html/404.html.heex` | title suffix, favicon, `aria-label`, and the visible "Go to …" button | **trademark, and public** — this page is served to anyone hitting a bad URL on the booking host |
+| `lib/tymeslot_web/controllers/error_html/404.html.heex` | title suffix, favicon, `aria-label`, and the visible "Go to …" button | **trademark, and public** — this page is served to anyone hitting a bad URL on the public instance |
 | `priv/static/fonts/`, `priv/static/css/`, `priv/static/images/slate/` | new directories (see §3) | — |
 
 Both `config/config.exs` edits sit on upstream's own extension seams
@@ -160,8 +160,9 @@ These fail **without** producing a merge conflict. Diff them on every bump.
    reschedule from the confirmation email.
 8. Verify the skin actually applied (not just that the page loads):
    ```bash
-   curl -sS https://the booking host/vincent | grep -o 'slate-skin[^"]*'
-   curl -sS https://the booking host/vincent | grep -o 'source-offer'
+   HOST=<your booking host>   # kept out of this repo on purpose
+   curl -sS "https://$HOST/$USER_SLUG" | grep -o 'slate-skin[^"]*'
+   curl -sS "https://$HOST/$USER_SLUG" | grep -o 'source-offer'
    ```
 9. Fast-forward `main`, tag `deploy/<version>-rp.<n>`, let CI push, then deploy.
 

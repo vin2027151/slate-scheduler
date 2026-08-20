@@ -25,7 +25,10 @@
 # of the later steps, which LiveView would otherwise be required to reach.
 
 set -euo pipefail
-ORIGIN="${SKINLAB_ORIGIN:-https://the booking host}"
+# Deliberately has no default: the booking host is not recorded in this repo.
+#   SKINLAB_ORIGIN=https://your.host ./dev/skinlab.sh
+: "${SKINLAB_ORIGIN:?set SKINLAB_ORIGIN to your booking host, e.g. https://cal.example.com}"
+ORIGIN="$SKINLAB_ORIGIN"
 USER_SLUG="${SKINLAB_USER:-vincent}"
 OUT="${SKINLAB_OUT:-/tmp/skinlab}"
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -38,7 +41,7 @@ python3 - "$OUT" <<'PY'
 import re, sys, os
 out = sys.argv[1]
 h = open(os.path.join(out, 'raw.html')).read()
-h = re.sub(r'(src|href)="/(?!/)', r'\1="' + os.environ.get('SKINLAB_ORIGIN', 'https://the booking host') + '/', h)
+h = re.sub(r'(src|href)="/(?!/)', r'\1="' + os.environ['SKINLAB_ORIGIN'] + '/', h)
 h = re.sub(r'<script[^>]*type="module"[^>]*>\s*</script>', '', h)
 h = h.replace('</head>', '<link rel="stylesheet" href="./slate-skin.css">\n</head>')
 h = h.replace('<html ', '<html data-embedded ')   # what iframe_embed.js sets when framed

@@ -1,5 +1,5 @@
 Slate Scheduler
-==================
+===============
 
 Slate Scheduler is a MODIFIED version of Tymeslot, derived from upstream
 release v1.8.1 (commit 591afe69286894541bf55bd46dfb62549413735e).
@@ -12,7 +12,7 @@ release v1.8.1 (commit 591afe69286894541bf55bd46dfb62549413735e).
 
 Modifications
 -------------
-Copyright (C) 2026 the operator
+Modified 2026-08-12.
 
 This is a modified version of the Program within the meaning of the AGPL. The
 modified files carry a notice to that effect, and the complete list — with the
@@ -21,10 +21,10 @@ is upstream's work, unaltered.
 
 Corresponding Source
 --------------------
-The public instance at https://the booking host runs this program. Under
-AGPL section 13, everyone who interacts with it over a network is offered the
-Corresponding Source of the running modified version: it is this repository, at
-the tag named by the deployed image (deploy/<version>-rp.<n>).
+This repository is the Corresponding Source of the modified version served by
+the public instance, at the tag named by the deployed image
+(deploy/<version>-rp.<n>). Under AGPL section 13, everyone who interacts with
+that instance over a network is offered it, free of charge.
 
 The running instance carries a visible "Source" link on the booking page,
 rendered by TymeslotWeb.Extensions.SourceOffer.
@@ -41,7 +41,7 @@ that a distributed modified version carry its own name and its own logo, and
 permits stating that it is derived from Tymeslot. Accordingly:
 
   * this fork is named "Slate Scheduler", not Tymeslot;
-  * the public booking pages carry the operator's own mark;
+  * the public booking pages carry their own mark, not upstream's;
   * this notice states the derivation, which TRADEMARK.md expressly allows.
 
 Slate Scheduler is neither affiliated with, nor endorsed or sponsored by,

@@ -74,7 +74,14 @@ config :tymeslot,
   # no template edit. Note filter_valid_extensions/1 silently drops a module
   # that fails Code.ensure_loaded?/function_exported? with only a
   # Logger.warning — verify ".source-offer" is really in the served HTML.
-  theme_extensions: [{TymeslotWeb.Extensions.SourceOffer, :render}],
+  theme_extensions: [
+    {TymeslotWeb.Extensions.SourceOffer, :render},
+    # Makes the embed's data-primary-color take effect. Must render AFTER
+    # the skin's <link> (it does — extensions render inside <body>) and at
+    # :root:root:root so a deliberate per-embed override outranks the brand
+    # default without dragging the rest of the palette back to the dark scheme.
+    {TymeslotWeb.Extensions.ParamPalette, :render}
+  ],
 
   # Additional CSS files for scheduling pages - empty by default (external layers can inject CSS)
   # FORK NOTICE: this upstream seam is the whole of the Stage 1 skin. The

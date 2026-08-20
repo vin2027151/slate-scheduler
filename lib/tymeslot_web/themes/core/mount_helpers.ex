@@ -171,6 +171,7 @@ defmodule TymeslotWeb.Themes.Core.MountHelpers do
           socket
           |> Context.assign_to_socket(context)
           |> ThemeCustomizationHelpers.assign_theme_customization(profile, context.theme_id)
+          |> restore_param_customizations(context)
 
         {:ok, context, socket}
 
@@ -180,6 +181,29 @@ defmodule TymeslotWeb.Themes.Core.MountHelpers do
   end
 
   # Private
+
+  # FORK NOTICE: keep URL-param customizations alive.
+  #
+  # `Context.from_params/2` parses and hex-validates `?primary-color=` into
+  # `context.customizations`, and `assign_to_socket/2` assigns it as
+  # `:theme_customization`. One line later `assign_theme_customization/3`
+  # overwrites that assign with the value it reads from the database (or a
+  # fallback), so the param is parsed, validated, assigned — and immediately
+  # discarded. The embed's `data-primary-color` attribute therefore does
+  # nothing, while embed.js still faithfully forwards it and the dashboard
+  # still offers it as a control.
+  #
+  # Merge the param-derived keys back on top. The DB value stays the base, so
+  # this only affects requests that actually carry the param.
+  @spec restore_param_customizations(Phoenix.LiveView.Socket.t(), Context.t()) ::
+          Phoenix.LiveView.Socket.t()
+  defp restore_param_customizations(socket, %Context{customizations: overrides})
+       when is_map(overrides) and map_size(overrides) > 0 do
+    base = socket.assigns[:theme_customization] || %{}
+    assign(socket, :theme_customization, Map.merge(base, overrides))
+  end
+
+  defp restore_param_customizations(socket, _context), do: socket
 
   defp setup_meeting_management_socket(
          socket,

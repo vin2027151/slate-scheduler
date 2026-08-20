@@ -44,13 +44,14 @@ revision lives in the image tag.
 
 ## 2. Modified upstream files — the whole patch surface
 
-Four files. Re-apply every one on a rebase.
+Five files. Re-apply every one on a rebase.
 
 | file | change | if the patch is lost |
 |---|---|---|
 | `config/config.exs` | `scheduling_additional_css: ["/css/slate-skin.css?v=1"]` and `theme_extensions: [{TymeslotWeb.Extensions.SourceOffer, :render}]` | **silent** — page renders stock Rhythm emerald, and the AGPL source offer disappears |
 | `Dockerfile.docker` | `ARG PG_MAJOR=17`, pinning `postgresql-17` in the **`release`** stage (not `release-slim`) | **silent until a base bump**, then a production crash loop: PG refuses an incompatible cluster, `start-docker.sh` exits 1, `restart: unless-stopped` loops |
 | `lib/tymeslot_web/components/layouts/scheduling_root.html.heex` | title suffix, `og:site_name`, favicon → `/images/slate/favicon.svg` | cosmetic, but reverts the product name to Tymeslot — a **trademark** issue, not just a branding one |
+| `lib/tymeslot_web/themes/core/mount_helpers.ex` | `restore_param_customizations/2` — stops `assign_theme_customization/3` clobbering the hex-validated `?primary-color=` that `Context.from_params/2` just parsed | **silent** — `data-primary-color` goes back to doing nothing at all, while embed.js still forwards it and the dashboard still offers it |
 | `priv/static/fonts/`, `priv/static/css/`, `priv/static/images/slate/` | new directories (see §3) | — |
 
 Both `config/config.exs` edits sit on upstream's own extension seams
@@ -67,6 +68,7 @@ priv/static/css/slate-skin.css          the brand skin
 priv/static/fonts/{instrument-sans,newsreader}.woff2 + OFL.txt
 priv/static/images/slate/{favicon,logo,logo-with-text}.svg
 lib/tymeslot_web/extensions/source_offer.ex
+lib/tymeslot_web/extensions/param_palette.ex
 FORK.md  NOTICE  .github/workflows/fork-image.yml
 ```
 
@@ -83,7 +85,8 @@ These fail **without** producing a merge conflict. Diff them on every bump.
 | what | why it matters |
 |---|---|
 | `scheduling_root.html.heex` lines 37–43 | the `render_theme_css/1` call followed by the `scheduling_additional_css` loop. The skin only wins because it is linked **after** the theme sheet. If upstream reorders these, the cascade inverts. |
-| `layouts.ex` `render_theme_extensions/1` | the source-offer seam. `filter_valid_extensions/1` silently drops a module that fails `function_exported?/3`, logging only a warning. |
+| `helpers.ex` `assign_theme_customization/3` | the function whose clobbering we undo. If upstream ever fixes this themselves, `restore_param_customizations/2` becomes a harmless no-op — but if they change the assign KEY, our merge silently stops applying. |
+| `layouts.ex` `render_theme_extensions/1` | the source-offer and param-palette seam. `filter_valid_extensions/1` silently drops a module that fails `function_exported?/3`, logging only a warning. |
 | `rhythm/scheduling/wrapper.ex` | the only caller of `render_theme_extensions/1`, and the emitter of the generated `:root` palette block. |
 | the compiled Rhythm class vocabulary | the skin targets `.scheduling-box`, `.input`, `.custom-question-*`, `.success-badge-inner*`, `.action-button-*`, `.awaiting-payment-*`, `.glass-morphism-card`, `.timezone-dropdown`. A renamed class silently stops being styled. |
 | `Dockerfile.docker` runtime base | a move off `debian:trixie-slim` changes the available PostgreSQL major. The pin turns that into a build failure — which is the point. |
@@ -151,6 +154,11 @@ never changes `booking_theme` in the database. Both conditions are checked in
   be emptied (a nil customization is replaced by a fallback) and cannot be made
   light (`PaletteDerivation` hardcodes background L=8%), so specificity is the
   only lever.
+- **Three levels of `:root`, and they are all deliberate.** The cascade is
+  `dashboard palette (0,1,0) < brand skin :root:root (0,2,0) < ?primary-color=
+  :root:root:root (0,3,0)`. Verified in a browser, not assumed. The page is
+  on-brand by default, a per-embed override still wins, and an override cannot
+  drag the rest of the palette back to the dashboard's dark scheme.
 - **The skin lives in `priv/static/css/`, not `priv/static/assets/`.**
   `Dockerfile.docker` runs `rm -rf priv/static/assets/` after `COPY`, so a
   stylesheet there works locally and vanishes from the image.

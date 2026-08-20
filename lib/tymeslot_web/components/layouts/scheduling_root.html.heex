@@ -10,7 +10,10 @@
     <meta name="robots" content="noindex" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <meta name="csp-nonce" content={assigns[:csp_nonce]} />
-    <%!-- FORK NOTICE: public-facing product name. This layout serves only the
+    <%!-- FORK NOTICE — this file was modified on 2026-08-12.
+          See FORK.md for the full patch series.
+
+          Public-facing product name. This layout serves only the
           public booking pages; the dashboard uses root.html.heex and stays
           attributed to Tymeslot, which is honest attribution rather than less. --%>
     <.live_title suffix=" · Slate Scheduler">

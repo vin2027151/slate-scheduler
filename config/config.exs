@@ -68,7 +68,10 @@ config :tymeslot,
   extra_static_sources: [],
 
   # Theme extensions - empty by default (external layers can add overlays/branding)
-  # FORK NOTICE: renders the AGPL section 13 source offer on the public
+  # FORK NOTICE — this file was modified on 2026-08-12.
+  # See FORK.md for the full patch series.
+  #
+  # renders the AGPL section 13 source offer on the public
   # booking page, inside the iframe, where our network users actually are.
   # Rhythm's wrapper.ex already calls render_theme_extensions/1, so this needs
   # no template edit. Note filter_valid_extensions/1 silently drops a module

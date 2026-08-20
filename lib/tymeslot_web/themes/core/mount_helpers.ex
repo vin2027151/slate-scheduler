@@ -182,7 +182,10 @@ defmodule TymeslotWeb.Themes.Core.MountHelpers do
 
   # Private
 
-  # FORK NOTICE: keep URL-param customizations alive.
+  # FORK NOTICE — this file was modified on 2026-08-12.
+  # See FORK.md for the full patch series.
+  #
+  # Keep URL-param customizations alive.
   #
   # `Context.from_params/2` parses and hex-validates `?primary-color=` into
   # `context.customizations`, and `assign_to_socket/2` assigns it as

@@ -52,7 +52,10 @@ priv/static/**/*-????????????????????????????????.*
 priv/static/embed.js
 # Legacy theme CSS superseded by tailwind quill/rhythm builds in assets/
 #
-# FORK NOTICE: `priv/static/css/*` rather than `priv/static/css/`, so that a
+# FORK NOTICE — this file was modified on 2026-08-12.
+# See FORK.md for the full patch series.
+#
+# `priv/static/css/*` rather than `priv/static/css/`, so that a
 # single tracked file can be re-included below. Git cannot re-include a file
 # whose parent DIRECTORY is excluded, so the trailing-slash form would make the
 # negation silently do nothing — the skin would never be committed, CI's

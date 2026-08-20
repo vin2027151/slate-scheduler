@@ -58,7 +58,7 @@ RUN mix do deps.compile + compile
 RUN for i in 1 2 3 4 5; do \
         echo "Attempt $i: Installing tailwind and esbuild" && \
         mix do tailwind.install + esbuild.install && break || sleep 5; \
-    done  
+    done
 
 # Install node_modules for the heroicons plugin — the standalone tailwind
 # binary bundles @tailwindcss/forms but not the tailwindcss runtime that
@@ -131,7 +131,10 @@ CMD ["/app/start-docker.sh"]
 # batteries-included image every existing self-hoster runs.
 FROM release-slim AS release
 
-# FORK NOTICE: pin the PostgreSQL major version.
+# FORK NOTICE — this file was modified on 2026-08-12.
+# See FORK.md for the full patch series.
+#
+# Pin the PostgreSQL major version.
 #
 # Upstream installs the unversioned `postgresql` metapackage, resolved against
 # whatever `debian:trixie-slim` points at on the day of the build, and

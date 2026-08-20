@@ -28,13 +28,25 @@ entire fork as a short, readable series.
 git config remote.upstream.fetch "+refs/tags/*:refs/tags/upstream/*"
 ```
 
-**Deploy tags use the `deploy/` prefix, never `v*`.** Upstream's
-`.github/workflows/docker-publish.yml` triggers on `push: tags: ['v*']`, its
-`github.server_url` guard passes on a fork, and it would either fail on missing
-Docker Hub secrets or attempt to push to `luka1thb/tymeslot` — someone else's
-namespace. Disable that workflow in the Actions UI (a repository setting, so it
-survives every rebase and stays invisible in `git diff`) rather than deleting
-the file.
+**Upstream's CI is deleted, not disabled.** `.github/workflows/` keeps only
+`fork-image.yml`. The eight upstream workflows were removed outright because
+several are actively dangerous here: `docker-publish.yml` and
+`cloudron-publish.yml` push to registries this project does not own,
+`release.yml` runs upstream's release process, and `licensing.yml` fires on
+`pull_request_target` and `issue_comment` — so any stranger opening an issue on
+the public repo would trigger it.
+
+Disabling them through the Actions UI was the first approach and is rejected:
+that state is invisible in the repository, does not travel with a clone or a
+mirror, and cannot be reviewed in a diff. A deletion is self-documenting.
+
+The cost is a rebase conflict whenever upstream edits one of those files. That
+is the right trade — the conflict is LOUD and resolves as "stay deleted", where
+a silently re-enabled workflow is not.
+
+**Deploy tags still use the `deploy/` prefix, never `v*`**, so that a fresh
+clone which has not yet had these files removed cannot wake upstream's
+tag-triggered publish.
 
 **Never touch `version:` in `mix.exs`.** Upstream rewrites that line every
 release; claiming it guarantees a conflict every time for no benefit. The fork

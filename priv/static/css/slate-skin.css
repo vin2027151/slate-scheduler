@@ -464,6 +464,87 @@ noscript > div[style] strong[style] { color: #F3F2E9 !important; }
  * minutes". Drop the icon and let the text carry it. */
 .duration-icon { display: none !important; }
 
+/* ── Remaining hardcoded whites ──────────────────────────────────────────────
+ * Found by enumerating every rule in the compiled bundle that sets a white or
+ * white-alpha text colour (31 of them), then subtracting the ones this file
+ * already covers and the ones that sit on a filled control where white is
+ * correct — .ticket-badge is background:var(--theme-primary), .success-icon
+ * sits inside a filled badge, .avatar-checkmark on the gold disc. What is left
+ * is white text on a cream surface: invisible, and reachable in production. */
+
+/* payment_processing / payment_cancelled. These load QUILL's stylesheet, not
+ * Rhythm's — router.ex's :payment_return live_session omits ThemeHook — so
+ * they get none of the Rhythm scoping. This file loads unconditionally, which
+ * is why these plain selectors reach them. */
+.payment-page-heading { color: #16241E !important; }
+.payment-page-body { color: #47584F !important; }
+.payment-page-link { color: #0E5F4C !important; text-decoration: underline !important; }
+
+/* The awaiting-payment card's own text was already handled, but the LINK
+ * inside the fallback line is a separate rule at #fff — the one element on
+ * that card a stuck customer is meant to click. */
+.awaiting-payment-fallback a {
+  color: #0E5F4C !important;
+  text-decoration: underline !important;
+}
+
+/* timezone_dropdown.ex draws its panel edge and row dividers with
+ * border-white/30 and border-white/20 — invisible on cream, so the dropdown
+ * loses all internal structure. Scoped to the booking wrapper so the dashboard
+ * (deliberately left dark and Tymeslot-branded) is untouched. */
+.rhythm-theme-wrapper .border-white\/30,
+.rhythm-theme-wrapper .border-white\/20 { border-color: #B7B49E !important; }
+
+/* ── Selection feedback ──────────────────────────────────────────────────────
+ * Rhythm marks a chosen day or time with
+ *   background: var(--theme-surface); border-color: var(--theme-primary)
+ * On the original near-black page a saturated border GLOWED against the dark
+ * fill, so that was enough. On cream, --theme-surface is very close to the
+ * unselected fill, so "selected" degrades to a thin border — on the two
+ * controls the entire booking depends on.
+ *
+ * Fill them instead, matching the CTA, so the current choice is unmistakable
+ * and the flow reads at a glance. Verified in the component gallery.
+ * Cream on --vir is 7.27:1. */
+.calendar-day.selected,
+.time-slot.selected {
+  background: #0E5F4C !important;
+  border-color: #0E5F4C !important;
+  color: #FBFAF3 !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+/* Hover has the same problem: a white-alpha wash over cream is invisible. */
+.calendar-day:hover:not(:disabled):not(.selected),
+.time-slot:hover:not(.selected) {
+  background: rgba(14, 95, 76, .07) !important;
+  border-color: #0E5F4C !important;
+}
+
+/* Keyboard focus must survive the fills above — the booking flow has to be
+ * completable without a mouse. A visible ring, on both states. */
+.calendar-day:focus-visible,
+.time-slot:focus-visible,
+.next-button:focus-visible,
+.submit-button:focus-visible,
+.prev-button:focus-visible,
+.input:focus-visible {
+  outline: 2px solid #0E5F4C !important;
+  outline-offset: 2px !important;
+}
+.calendar-day.selected:focus-visible,
+.time-slot.selected:focus-visible {
+  outline-color: #16241E !important;
+}
+
+/* Unavailable days must read as unavailable on cream, not merely faint. */
+.calendar-day:disabled {
+  color: rgba(22, 36, 30, .28) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
 /* ── AGPL §13 source offer ───────────────────────────────────────────────────
  * Rendered by TymeslotWeb.Extensions.SourceOffer via the :theme_extensions
  * seam. AGPL requires this be offered "prominently" to users interacting over

@@ -105,6 +105,18 @@ screens, the dashboard chrome, and the `© Tymeslot` footer. Reasoning:
 ever reopened, or any second account is created, these stop being operator-only
 and must be rebranded before that happens.
 
+**The one overwritten binary:** `priv/static/favicon.ico`. `static_paths/0`
+serves it at `/favicon.ico`, which browsers request unprompted, so upstream's
+mark was being served from a public URL by a modified version even though every
+page declares `<link rel="icon">` pointing at the Slate SVG. Regenerated from
+`priv/static/images/slate/logo.svg` (rendered at 64px, downsampled to a 32×32
+ICO). Called out here because a replaced binary is invisible in `git diff` — on
+a rebase, confirm it is still the Slate compass and not upstream's icon:
+
+```bash
+git diff --stat upstream/vNEW..main -- priv/static/favicon.ico   # expect a change
+```
+
 **Never touched:** `priv/static/images/brand/` keeps upstream's marks byte for
 byte — verified empty by `git diff vendor..main -- priv/static/images/brand/`.
 They are simply no longer referenced from any rebranded surface.

@@ -170,6 +170,16 @@ A public repo plus skip-most-releases is not a coherent pair.
 
 ---
 
+## 5b. Publishing and deploying
+
+The publish-and-deploy runbook is **`GO-LIVE.md` in the private `tymeslot-deploy`
+repository**, not here. It names the server, the SSH user and the key file, and
+none of that is Corresponding Source — AGPL section 13 obliges us to publish the
+code that runs, not the procedure for logging into the box. Keeping it out of
+this public repo costs nothing and hands an attacker nothing.
+
+---
+
 ## 6. Rollback
 
 ```bash

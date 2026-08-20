@@ -48,7 +48,7 @@ Five files. Re-apply every one on a rebase.
 
 | file | change | if the patch is lost |
 |---|---|---|
-| `config/config.exs` | `scheduling_additional_css: ["/css/slate-skin.css?v=1"]` and `theme_extensions: [{TymeslotWeb.Extensions.SourceOffer, :render}]` | **silent** — page renders stock Rhythm emerald, and the AGPL source offer disappears |
+| `config/config.exs` | `scheduling_additional_css: ["/css/slate-skin.css?v=N"]` and `theme_extensions: [SourceOffer, ParamPalette]` | **silent** — page renders stock Rhythm emerald, and the AGPL source offer disappears |
 | `Dockerfile.docker` | `ARG PG_MAJOR=17`, pinning `postgresql-17` in the **`release`** stage (not `release-slim`) | **silent until a base bump**, then a production crash loop: PG refuses an incompatible cluster, `start-docker.sh` exits 1, `restart: unless-stopped` loops |
 | `lib/tymeslot_web/components/layouts/scheduling_root.html.heex` | title suffix, `og:site_name`, favicon → `/images/slate/favicon.svg` | cosmetic, but reverts the product name to Tymeslot — a **trademark** issue, not just a branding one |
 | `lib/tymeslot_web/themes/core/mount_helpers.ex` | `restore_param_customizations/2` — stops `assign_theme_customization/3` clobbering the hex-validated `?primary-color=` that `Context.from_params/2` just parsed | **silent** — `data-primary-color` goes back to doing nothing at all, while embed.js still forwards it and the dashboard still offers it |
@@ -56,8 +56,8 @@ Five files. Re-apply every one on a rebase.
 
 Both `config/config.exs` edits sit on upstream's own extension seams
 (`scheduling_additional_css`, `theme_extensions`), which exist precisely so an
-external layer can inject CSS and UI. That is why the patch surface is four
-files and not a new theme.
+external layer can inject CSS and UI. That is why the patch surface is this
+small and not a new theme.
 
 ---
 

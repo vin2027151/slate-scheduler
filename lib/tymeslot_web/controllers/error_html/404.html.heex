@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>{dgettext("errors", "Page not found")} · Tymeslot</title>
-    <link rel="icon" type="image/svg+xml" href={~p"/images/brand/favicon.svg"} />
+    <title>{dgettext("errors", "Page not found")} · Slate Scheduler</title>
+    <link rel="icon" type="image/svg+xml" href={~p"/images/slate/favicon.svg"} />
     <%!--
       Self-contained on purpose: this template renders with no layout (the
       endpoint's `render_errors` sets `layout: false`, and the catch-all
@@ -29,7 +29,7 @@
         <a
           href={~p"/"}
           class="mb-8 inline-block transition-transform duration-300 hover:scale-105"
-          aria-label="Tymeslot"
+          aria-label="Slate Scheduler"
         >
           <.logo img_class="h-12" />
         </a>
@@ -52,7 +52,7 @@
           href={~p"/"}
           class="mt-8 inline-flex items-center justify-center gap-2 rounded-token-2xl bg-linear-to-br from-turquoise-600 to-cyan-600 px-7 py-3.5 text-token-base font-bold text-white shadow-lg shadow-turquoise-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:from-turquoise-700 hover:to-cyan-700 hover:shadow-xl hover:shadow-turquoise-500/40"
         >
-          {dgettext("errors", "Go to Tymeslot")}
+          {dgettext("errors", "Go to Slate Scheduler")}
           <.icon name="hero-arrow-right-mini" class="h-4 w-4" />
         </a>
       </div>

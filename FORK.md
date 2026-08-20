@@ -44,7 +44,7 @@ revision lives in the image tag.
 
 ## 2. Modified upstream files — the whole patch surface
 
-Five files. Re-apply every one on a rebase.
+Seven files. Re-apply every one on a rebase.
 
 | file | change | if the patch is lost |
 |---|---|---|
@@ -52,6 +52,8 @@ Five files. Re-apply every one on a rebase.
 | `Dockerfile.docker` | `ARG PG_MAJOR=17`, pinning `postgresql-17` in the **`release`** stage (not `release-slim`) | **silent until a base bump**, then a production crash loop: PG refuses an incompatible cluster, `start-docker.sh` exits 1, `restart: unless-stopped` loops |
 | `lib/tymeslot_web/components/layouts/scheduling_root.html.heex` | title suffix, `og:site_name`, favicon → `/images/slate/favicon.svg` | cosmetic, but reverts the product name to Tymeslot — a **trademark** issue, not just a branding one |
 | `lib/tymeslot_web/themes/core/mount_helpers.ex` | `restore_param_customizations/2` — stops `assign_theme_customization/3` clobbering the hex-validated `?primary-color=` that `Context.from_params/2` just parsed | **silent** — `data-primary-color` goes back to doing nothing at all, while embed.js still forwards it and the dashboard still offers it |
+| `lib/tymeslot_web/components/core_components/brand.ex` | logo `src` → `/images/slate/…`, alt text, intrinsic dimensions matched to the Slate artwork | **trademark** — the modified version starts serving upstream's logo again |
+| `lib/tymeslot_web/controllers/error_html/404.html.heex` | title suffix, favicon, `aria-label`, and the visible "Go to …" button | **trademark, and public** — this page is served to anyone hitting a bad URL on the booking host |
 | `priv/static/fonts/`, `priv/static/css/`, `priv/static/images/slate/` | new directories (see §3) | — |
 
 Both `config/config.exs` edits sit on upstream's own extension seams
@@ -75,6 +77,37 @@ FORK.md  NOTICE  .github/workflows/fork-image.yml
 Assets are **added**, never overwritten in place. `priv/static/images/brand/`
 keeps upstream's files untouched: a modified binary is invisible in `git diff`,
 and a new path is self-documenting.
+
+---
+
+## 3b. Trademark posture — what is rebranded and what is deliberately not
+
+Upstream `TRADEMARK.md`: *"If you distribute a modified version, you must give it
+your own name and your own logo. You may state that it is derived from or based
+on Tymeslot."* The AGPL grant covers the code; it does not cover the marks.
+
+**Rebranded — every surface a third party can reach:**
+the booking pages (`scheduling_root.html.heex`), the 404 page, and the shared
+logo component. `git grep Tymeslot` over the public surfaces returns only module
+namespaces and code comments.
+
+**Deliberately NOT rebranded — operator-only surfaces:** the login and signup
+screens, the dashboard chrome, and the `© Tymeslot` footer. Reasoning:
+
+  * `REGISTRATION_ENABLED=false` and it is enforced in `auth.ex`, not just hidden
+    in the UI, so exactly one person ever sees these — the operator, who is not
+    plausibly confused about what the software is.
+  * They are `dgettext` msgids. Changing the source string changes the msgid and
+    silently drops the existing translation in all five locale catalogues, for
+    strings nobody but the operator reads.
+
+**This is conditional, and the condition is written down:** if registration is
+ever reopened, or any second account is created, these stop being operator-only
+and must be rebranded before that happens.
+
+**Never touched:** `priv/static/images/brand/` keeps upstream's marks byte for
+byte — verified empty by `git diff vendor..main -- priv/static/images/brand/`.
+They are simply no longer referenced from any rebranded surface.
 
 ---
 

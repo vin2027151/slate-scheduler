@@ -4,7 +4,19 @@ defmodule TymeslotWeb.Components.CoreComponents.Brand do
   use Gettext, backend: TymeslotWeb.Gettext
 
   @doc """
-  Renders the Tymeslot logo.
+  Renders the Slate Scheduler logo.
+
+  FORK NOTICE — this file was modified on 2026-08-12.
+  See FORK.md for the full patch series.
+
+  Upstream TRADEMARK.md requires a distributed modified version to carry its own
+  name and its own logo, so this points at priv/static/images/slate/ rather
+  than the upstream marks in priv/static/images/brand/, which are left in place
+  and untouched.
+
+  Intrinsic width/height follow the Slate artwork's own viewBox (wordmark
+  800x90, icon 500x500), not upstream's 620x200 / 200x200 — reusing those would
+  distort the mark.
 
   ## Attributes
     * `mode` - Either :full (logo + text) or :icon (logo only). Defaults to :full.
@@ -21,18 +33,18 @@ defmodule TymeslotWeb.Components.CoreComponents.Brand do
     <div class={["flex items-center", @class]}>
       <%= if @mode == :full do %>
         <img
-          src="/images/brand/logo-with-text.svg"
-          alt="Tymeslot"
-          width="620"
-          height="200"
+          src="/images/slate/logo-with-text.svg"
+          alt="Slate Scheduler"
+          width="800"
+          height="90"
           class={[@img_class, "w-auto"]}
         />
       <% else %>
         <img
-          src="/images/brand/logo.svg"
-          alt={dgettext("common", "Tymeslot logo")}
-          width="200"
-          height="200"
+          src="/images/slate/logo.svg"
+          alt={dgettext("common", "Slate Scheduler logo")}
+          width="500"
+          height="500"
           class={[@img_class, "w-auto"]}
         />
       <% end %>
